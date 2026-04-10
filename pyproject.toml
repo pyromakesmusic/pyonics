@@ -44,7 +44,8 @@ dependencies = [
 dev = [
   "pytest",
   "build",
-  "twine"
+  "twine",
+    "uv"
 ]
 
 [tool.hatch.build.targets.wheel]
