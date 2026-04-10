@@ -40,6 +40,12 @@ dependencies = [
 "Homepage" = "https://github.com/pyromakesmusic/pyonics"
 "Bug Tracker" = "https://github.com/pyromakesmusic/pyonics/issues"
 
-# THIS IS THE IMPORTANT PART
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "build",
+  "twine"
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/pyonics"]
