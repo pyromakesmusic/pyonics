@@ -4,3 +4,7 @@
 /src/pyonics/submodules/ui/vosk-model-small-en-us-0.15-OLD/
 /dist/
 /testenv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
