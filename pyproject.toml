@@ -23,7 +23,7 @@ dependencies = [
     "cryptography",
     "PyOpenGL",
     "pyaudio",
-    "PyQt5>=5.15.11,<6",
+    "PyQt5==5.15.11",
     "transformers",
     "customtkinter",
     "pyttsx3",
