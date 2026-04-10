@@ -20,17 +20,8 @@ classifiers = [
 dependencies = [
     "pandas",
     "klampt==0.10.0.post2",
-    "cryptography",
-    "PyOpenGL",
-    "pyaudio",
-    "PyQt5>=5.15.11,<5.15.18",
-    "transformers",
     "customtkinter",
-    "pyttsx3",
-    "vosk",
-    "gpsd-py3",
     "python-osc",
-    "torch",
     "matplotlib",
     "pytest",
     "differint"
