@@ -1,5 +1,6 @@
 /.idea/
-/src/submodules/ui/vosk-model-pt-fb-v0.1.1-pruned/
-/src/submodules/ui/vosk-model-small-en-us-0.15/
-/src/submodules/ui/vosk-model-small-en-us-0.15-OLD/
+/src/pyonics/submodules/ui/vosk-model-pt-fb-v0.1.1-pruned/
+/src/pyonics/submodules/ui/vosk-model-small-en-us-0.15/
+/src/pyonics/submodules/ui/vosk-model-small-en-us-0.15-OLD/
 /dist/
+/testenv/
