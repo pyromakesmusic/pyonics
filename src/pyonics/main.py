@@ -29,10 +29,6 @@ LIBRARY IMPORTS
 ===============
 """
 
-# Local Submodules
-
-import submodules.ui.interface as interface
-
 # External Libraries
 
 import pandas as pd
@@ -61,10 +57,7 @@ FUNCTION DEFINITIONS
 """
 
 
-def main(ui_type="AR"):
-    if ui_type == "AR":
-        ui = interface.AugmentOverlayTkUI()
-    else:
+def main():
         return
 
 if __name__ == "__main__":
