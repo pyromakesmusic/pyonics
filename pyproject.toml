@@ -19,7 +19,7 @@ classifiers = [
 
 dependencies = [
     "pandas",
-    "klampt",
+    "klampt==0.10.0.post2",
     "cryptography",
     "PyOpenGL",
     "pyaudio",
