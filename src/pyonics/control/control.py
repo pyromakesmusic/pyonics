@@ -18,6 +18,7 @@ import math
 OUTSIDE LIBRARY IMPORTS
 """
 import klampt
+import klampt.sim
 import klampt.math.vectorops as kmv
 import klampt.model.contact as kmc
 import klampt.plan.robotplanning as kmrp
