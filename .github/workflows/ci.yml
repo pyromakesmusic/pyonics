@@ -33,7 +33,8 @@ jobs:
 
       - name: Test install from wheel
         run: |
-          pip install dist/*.whl
+          ls dist
+          pip install $(ls dist/*.whl)
           python -c "import pyonics"
 
   publish:
