@@ -1,13 +1,8 @@
 from setuptools import setup, find_packages
 import klampt
 import numpy
-import matplotlib
 import matplotlib.pyplot
 import pandas
-
-import submodules.control
-
-
 
 setup(
     name='pyonics',
