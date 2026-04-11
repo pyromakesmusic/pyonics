@@ -4,11 +4,9 @@ import numpy
 import matplotlib
 import matplotlib.pyplot
 import pandas
-import submodules.apps
-import submodules.video
-import submodules.audio
+
 import submodules.control
-import submodules.ui
+
 
 
 setup(
