@@ -29,5 +29,5 @@ requirements:
     # Add any runtime dependencies here
 
 about:
-  home: https://github.com/pyromakesmusic/MATH4157/pyonics
+  home: https://github.com/pyromakesmusic/pyonics
   license: LicenseName  # Replace with your license
