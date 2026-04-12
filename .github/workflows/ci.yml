@@ -6,6 +6,10 @@ on:
     tags: ["v*"]   # triggers release on version tags
   pull_request:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   test:
     runs-on: windows-latest  # important for your dependency stack
@@ -52,24 +56,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install build tools
-        run: pip install build twine
+        run: pip install build
 
       - name: Build package
         run: python -m build
 
-      - name: Debug token
-        run: |
-          if [ -z "$TWINE_PASSWORD" ]; then
-            echo "TOKEN IS EMPTY"
-            exit 1
-          else
-            echo "TOKEN PRESENT"
-          fi
-        env:
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-
       - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload dist/* --verbose
+        uses: pypa/gh-action-pypi-publish@release/v1
