@@ -1,4 +1,4 @@
-from control import Muscle, ExoController, AsyncServer
+from .control import Muscle, ExoController, AsyncServer
 
 __all__ = [
     "Muscle",
