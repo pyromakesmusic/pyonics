@@ -207,7 +207,12 @@ class AsyncServer:
         args: any args for the function, this may need to be *args and **kwargs - needs more research
         """
         print("... performing mapping operation... ")
-        self.dispatcher.map(pattern, func, args)
+        def wrapper(address, *osc_args):
+            if self.log_osc:
+                print(f"[OSC RECEIVED] {address} {osc_args}")
+
+            return func(address, *osc_args)
+        self.dispatcher.map(pattern, wrapper)
 
     """
     Testing
