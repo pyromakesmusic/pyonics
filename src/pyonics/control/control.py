@@ -138,6 +138,7 @@ class Muscle(klampt.sim.ActuatorEmulator):
         # Calculating unit vectors by dividing 3-tuple by its length
         unit_a = kmv.div(direction_a, self.length)
         unit_b = kmv.mul(direction_b, self.length)  # Redundant but I'm including this to make it easier to read for now
+                                                    # Possibly a bug? Why is this multiplying
 
         # Combining unit vectors and force magnitude to give a force vector
         force_a = kmv.mul(kmv.mul(unit_a, force), .5)  # Half (.5) because of Newton's Third Law,
@@ -303,6 +304,7 @@ class ExoController(klampt.control.OmniRobotInterface):
 
     async def idle_configuration(self):
         # Does the mapping and last minute settings stuff necessary to begin controller idle
+        # This function absolutely needs a better name more related to networking.
         self.server = AsyncServer(self.config["address"], self.config["port"], "/pressures", self.set_pressures)
         await self.server.map("/pressures", self.set_pressures)
         await self.server.make_endpoint()
