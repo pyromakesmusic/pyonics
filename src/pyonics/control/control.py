@@ -137,8 +137,7 @@ class Muscle(klampt.sim.ActuatorEmulator):
 
         # Calculating unit vectors by dividing 3-tuple by its length
         unit_a = kmv.div(direction_a, self.length)
-        unit_b = kmv.mul(direction_b, self.length)  # Redundant but I'm including this to make it easier to read for now
-                                                    # Possibly a bug? Why is this multiplying
+        unit_b = kmv.div(direction_b, self.length)  # Changed to division
 
         # Combining unit vectors and force magnitude to give a force vector
         force_a = kmv.mul(kmv.mul(unit_a, force), .5)  # Half (.5) because of Newton's Third Law,
@@ -190,6 +189,7 @@ class AsyncServer:
         self.protocol = None
         self.password = signature_string
         self.handler = handler
+        self.log_osc = False
 
     async def make_endpoint(self):
         """Need to make this endpoint"""
@@ -207,7 +207,19 @@ class AsyncServer:
         args: any args for the function, this may need to be *args and **kwargs - needs more research
         """
         print("... performing mapping operation... ")
-        self.dispatcher.map(pattern, func, args)
+        def wrapper(address, *osc_args):
+            if self.log_osc:
+                print(f"[OSC RECEIVED] {address} {osc_args}")
+
+            return func(address, *osc_args)
+        self.dispatcher.map(pattern, wrapper)
+
+    """
+    Testing
+    """
+
+    async def enable_osc_logging(self, enabled: bool = True):
+        self.log_osc = enabled
 
 
 """
@@ -296,15 +308,41 @@ class ExoController(klampt.control.OmniRobotInterface):
         self.pressures = [pressure for pressure in args]
         return
 
+    async def pressures_to_forces(self, muscle_objects, pressures, force_multiplier):
+        """
+        Converts actuator pressures into force application tuples.
+
+        Returns:
+        List of tuples: (link_index, force_vector, local_point)
+
+        muscle_objects: An iterable of pyonics Muscle objects.
+        pressures: An iterable of pressures.
+        force_multiplier: A numeric constant by which to multiply forces. For testing and calibration.
+        """
+        # Should move this to pyonics
+        force_list = []  # Makes a new empty list... of tuples? Needs link number, force, and transform
+        i = 0
+        try:
+            for muscle in muscle_objects:
+                triplet_a, triplet_b = muscle.update_muscle(pressures[i])  # Updates muscles w/ OSC argument
+                force_list.append(triplet_a)
+                force_list.append(triplet_b)
+                i += 1
+        except IndexError:  # Better handling would be good, currently is fine if number of pressures < muscles
+            force_list.append([0, 0, 0])
+            force_list.append([0, 0, 0])
+
+        return force_list * force_multiplier
+
     def controlRate(self):
         """
         Should be the same as the physical device, Reaktor control rate, simulation timestep
         """
         return self.dt
 
-    async def idle_configuration(self):
+    async def setup_osc_server(self):
         # Does the mapping and last minute settings stuff necessary to begin controller idle
-        # This function absolutely needs a better name more related to networking.
+        # Changed name from idle_configuration
         self.server = AsyncServer(self.config["address"], self.config["port"], "/pressures", self.set_pressures)
         await self.server.map("/pressures", self.set_pressures)
         await self.server.make_endpoint()
@@ -349,14 +387,12 @@ class ExoController(klampt.control.OmniRobotInterface):
     DIAGNOSTIC
     """
 
+    async def enable_osc_logging(self, enabled: bool = True):
+        if self.server:
+            self.server.enable_osc_logging(enabled)
+
     async def count_muscles(self):
         return self.muscles.shape[0]
 
     async def count_bones(self):
         return len(self.bones)
-
-def main():
-    pass
-
-if __name__ == "__main__":
-    main()
