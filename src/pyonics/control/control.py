@@ -353,9 +353,3 @@ class ExoController(klampt.control.OmniRobotInterface):
 
     async def count_bones(self):
         return len(self.bones)
-
-def main():
-    pass
-
-if __name__ == "__main__":
-    main()
