@@ -137,8 +137,7 @@ class Muscle(klampt.sim.ActuatorEmulator):
 
         # Calculating unit vectors by dividing 3-tuple by its length
         unit_a = kmv.div(direction_a, self.length)
-        unit_b = kmv.mul(direction_b, self.length)  # Redundant but I'm including this to make it easier to read for now
-                                                    # Possibly a bug? Why is this multiplying
+        unit_b = kmv.div(direction_b, self.length)  # Changed to division
 
         # Combining unit vectors and force magnitude to give a force vector
         force_a = kmv.mul(kmv.mul(unit_a, force), .5)  # Half (.5) because of Newton's Third Law,
