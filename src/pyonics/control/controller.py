@@ -46,12 +46,13 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
     Refers to exactly one McKibben muscle, with all associated attributes.
     This may end up being an interface for both an Actuator and a simulated ActuatorEmulator, running simultaneously.
     """
-    def __init__(self, row, controller):
+    def __init__(self, row, controller, sim):
         """
         Takes a dataframe row containing muscle information, a world model, a simulator, and a controller.
         """
         klampt.sim.ActuatorEmulator.__init__(self)
         self.controller = controller
+        self.sim = sim
         self.a = int(row["link_a"])  # Gets index of the row of link a
         self.b = int(row["link_b"])
 
