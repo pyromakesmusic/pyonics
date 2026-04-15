@@ -97,6 +97,11 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         Same as above, returns a numeric value that is the collision distance.
         """
         return 0.8
+
+    async def process(self, commands, dt):
+        if commands and 'pressure' in commands:
+            self.pressure = commands['pressure']
+
     def update_muscle(self, pressure):  # Should call every loop?
         """
         pressure: single float value. Starting at 0-1 but may make sense to put in terms of psi, bar or pascal.
