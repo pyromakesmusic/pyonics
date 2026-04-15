@@ -37,7 +37,7 @@ CLASS DEFINITIONS
 """
 Hardware
 """
-class Muscle(klampt.sim.ActuatorEmulator):
+class MuscleEmulator(klampt.sim.ActuatorEmulator):
     """
     row: A single dataframe row with muscle information.
     controller: A robot controller.
@@ -114,7 +114,7 @@ class Muscle(klampt.sim.ActuatorEmulator):
         n: number of turns in the muscle fiber
         x: the displacement. This will probably take the most work to calculate.
         """
-        # Muscle transforms must update based on new link positions //// maybe not with applyForceAtLocalPoint()
+        # MuscleEmulator transforms must update based on new link positions //// maybe not with applyForceAtLocalPoint()
         self.link_a = self.controller.bones[self.a]
         self.link_b = self.controller.bones[self.b]
 
@@ -127,7 +127,7 @@ class Muscle(klampt.sim.ActuatorEmulator):
         self.length = kmv.distance(self.transform_a, self.transform_b)
         self.displacement = self.length - self.l_0  # Calculates displacement based on new length
 
-        # Muscle formula
+        # MuscleEmulator formula
         force = ((self.pressure * (self.weave_length)**2)/(4 * math.pi * (self.turns)**2)) * \
                 (((self.weave_length)/math.sqrt(3) + self.displacement)**2 - 1)
 
@@ -203,7 +203,7 @@ class ExoController(klampt.control.OmniRobotInterface):
     def muscleLoader(self, config_df):
         """
         Given a dataframe with an ["attachments"] column containing a path
-        to a .csv file detailing structured muscle parameters, generates a list of Muscle objects and
+        to a .csv file detailing structured muscle parameters, generates a list of MuscleEmulator objects and
         assigns them to the robot model. This should generate all muscles.
         """
         with open(config_df["attachments"]) as attachments:
@@ -214,7 +214,7 @@ class ExoController(klampt.control.OmniRobotInterface):
 
             for x in range(rows):
                 row = muscleinfo_df.iloc[x] # Locates the muscle information in the dataframe
-                muscle = Muscle(row, self) # Calls the muscle class constructor
+                muscle = MuscleEmulator(row, self) # Calls the muscle class constructor
                 muscle_objects.append(muscle) # Adds the muscle to the list
 
             muscle_series = pd.Series(data=muscle_objects, name="muscle_objects")
@@ -265,7 +265,7 @@ class ExoController(klampt.control.OmniRobotInterface):
         Returns:
         List of tuples: (link_index, force_vector, local_point)
 
-        muscle_objects: An iterable of pyonics Muscle objects.
+        muscle_objects: An iterable of pyonics MuscleEmulator objects.
         pressures: An iterable of pressures.
         force_multiplier: A numeric constant by which to multiply forces. For testing and calibration.
         """
