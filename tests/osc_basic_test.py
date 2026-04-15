@@ -1,5 +1,6 @@
 from pythonosc.udp_client import SimpleUDPClient
 import pyonics
+from pyonics.control.messages import AsyncTestClient, AsyncServer
 import time
 import asyncio
 import math
@@ -37,12 +38,12 @@ async def osc_roundtrip_test():
 
 @pytest.mark.skip(reason="Async OSC tests not stable in CI yet")
 async def test_single():
-    client = pyonics.AsyncTestClient(port=9000)
+    client = AsyncTestClient(port=5005)
     await client.send_once(1.0, 2.0, 3.0)
 
 @pytest.mark.skip(reason="Async OSC tests not stable in CI yet")
 async def test_constant():
-    client = pyonics.AsyncTestClient(port=9000)
+    client = AsyncTestClient(port=5005)
 
     def constant(t):
         return [0.5, 0.5, 0.5]
@@ -51,7 +52,7 @@ async def test_constant():
 
 @pytest.mark.skip(reason="Async OSC tests not stable in CI yet")
 async def test_sine():
-    client = pyonics.AsyncTestClient(port=9000)
+    client = AsyncTestClient(port=5005)
 
     def sine_wave(t):
         return [
@@ -60,3 +61,5 @@ async def test_sine():
         ]
 
     await client.send_loop(sine_wave, dt=0.02, duration=5.0)
+
+asyncio.run(osc_roundtrip_test())
