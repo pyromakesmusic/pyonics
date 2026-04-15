@@ -1,5 +1,6 @@
 from pythonosc.udp_client import SimpleUDPClient
 import pyonics
+from pyonics.control.messages import AsyncTestClient, AsyncServer
 import time
 import asyncio
 import math
