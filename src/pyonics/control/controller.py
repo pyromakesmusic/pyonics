@@ -247,7 +247,7 @@ class ExoController(klampt.control.OmniRobotInterface):
 
             for x in range(rows):
                 row = muscleinfo_df.iloc[x] # Locates the muscle information in the dataframe
-                muscle = MuscleEmulator(row, self) # Calls the muscle class constructor
+                muscle = MuscleEmulator(row, self) # Calls the muscle class constructor, has robot controller as argument
                 muscle_objects.append(muscle) # Adds the muscle to the list
 
             muscle_series = pd.Series(data=muscle_objects, name="muscle_objects")
