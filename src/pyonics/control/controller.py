@@ -218,8 +218,6 @@ class ExoController(klampt.control.OmniRobotInterface):
         """
         # print(config_data)
         self.config = config_data
-        self.state = "On"
-        self.shutdown_flag = False
         self.server = None
         self.collider = None
 
@@ -230,8 +228,6 @@ class ExoController(klampt.control.OmniRobotInterface):
             self.interface = klampt.control.OmniRobotInterface.__init__(self, self.robot)
 
         self.dt = config_data["timestep"]  # Sets the core robot clock
-        # Creating a series of link transforms, I need to check if this gets updated automatically
-        self.bones = pd.Series([self.robot.link(x).getTransform() for x in range(self.robot.numLinks())])
         # Loading all the muscles
         self.muscles = self.muscleLoader(config_data)
         # Setting initial muscle pressure to zero
@@ -283,16 +279,6 @@ class ExoController(klampt.control.OmniRobotInterface):
         self.server = AsyncServer(self.config["address"], self.config["port"], "/pressures", self.set_pressures)
         await self.server.map("/pressures", self.set_pressures)
         await self.server.make_endpoint()
-
-    async def idle(self, bones_transforms):
-        """
-        bones_transforms: A list of link locations. Essentially this is just updating the sensedPosition
-        """
-        self.bones = bones_transforms  # Not working quite right, might need rotation
-        return
-
-    async def shutdown(self):
-        self.shutdown_flag = True
 
     """
     DIAGNOSTIC
