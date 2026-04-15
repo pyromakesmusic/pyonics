@@ -20,6 +20,7 @@ OUTSIDE LIBRARY IMPORTS
 import klampt
 import klampt.sim
 import klampt.math.vectorops as kmv
+import klampt.math.so3 as so3
 import klampt.model.contact as kmc
 import klampt.plan.robotplanning as kmrp
 import klampt.plan.cspace as kmcs
@@ -54,8 +55,6 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         self.a = int(row["link_a"])  # Gets index of the row of link a
         self.b = int(row["link_b"])
 
-        self.link_a = self.controller.bones[self.a]  # Refers to the **controller's** knowledge of the link *transform*
-        self.link_b = self.controller.bones[self.b]  # Might need to be updated
         """
         The below values describe the displacement of the muscle attachment from the origin of the robot link.
         """
@@ -63,8 +62,6 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         self.delta_b = [float(s) for s in row["transform_b"].split(",")]
 
         # This starts out fine, but may eventually need to be updated each time step according to link position
-        self.transform_a = kmv.add(self.link_a[1], self.delta_a)
-        self.transform_b = kmv.add(self.link_b[1], self.delta_b)
 
         # Now we add some attributes that the simulated and real robot will share
         self.geometry = klampt.GeometricPrimitive()
@@ -98,11 +95,44 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         """
         return 0.8
 
-    async def process(self, commands, dt):
+    def process(self, commands, dt):
         if commands and 'pressure' in commands:
             self.pressure = commands['pressure']
 
-    def update_muscle(self, pressure):  # Should call every loop?
+    def substep(self, dt):
+        # 1. get link bodies
+        body_a = self.sim.body(self.controller.robot.link(self.a))
+        body_b = self.sim.body(self.controller.robot.link(self.b))
+
+        # 2. compute world attachment points (WITH ROTATION)
+        R_a, t_a = body_a.getTransform()
+        R_b, t_b = body_b.getTransform()
+
+        world_a = kmv.add(so3.apply(R_a, self.delta_a), t_a)
+        world_b = kmv.add(so3.apply(R_b, self.delta_b), t_b)
+        self.geometry.setSegment(world_a, world_b)
+
+        # 3. compute length + direction
+        direction = kmv.sub(world_a, world_b)
+        length = kmv.norm(direction)
+
+        if length < 1e-6:
+            return
+
+        unit = kmv.div(direction, length)
+        displacement = length - self.l_0
+
+        # 4. compute force magnitude
+        force_mag = ((self.pressure * (self.weave_length) ** 2) / (4 * math.pi * (self.turns) ** 2)) * \
+                    (((self.weave_length) / math.sqrt(3) + displacement) ** 2 - 1)
+
+        force_vec = kmv.mul(unit, force_mag)
+
+        # 5. apply equal and opposite forces
+        body_a.applyForceAtWorldPoint(kmv.mul(force_vec, -1), world_a)
+        body_b.applyForceAtWorldPoint(force_vec, world_b)
+
+    def update_muscle_old(self, pressure):  # Should call every loop?
         """
         pressure: single float value. Starting at 0-1 but may make sense to put in terms of psi, bar or pascal.
         ================
