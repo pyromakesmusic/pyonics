@@ -23,13 +23,13 @@ import klampt.math.vectorops as kmv
 import klampt.model.contact as kmc
 import klampt.plan.robotplanning as kmrp
 import klampt.plan.cspace as kmcs
-import pythonosc
-from pythonosc.dispatcher import Dispatcher
-import pythonosc.osc_server
+
 
 """
 CUSTOM LIBRARY IMPORTS
 """
+
+from .messages import AsyncServer, AsyncTestClient
 
 """
 CLASS DEFINITIONS
@@ -151,8 +151,6 @@ class Muscle(klampt.sim.ActuatorEmulator):
         """
         return triplet_a, triplet_b
 
-
-
     def pressure_autoscale(self):
         if self.pressure > self.max_pressure:  # autoscaling algorithm
             self.max_pressure = self.pressure
@@ -165,62 +163,6 @@ class Muscle(klampt.sim.ActuatorEmulator):
 
 class MuscleGroup():
     pass
-
-"""
-Network Controller
-"""
-class AsyncServer:
-    """
-    ip: source server ip as string
-    port: client port as integer
-
-    Server must be asynchronous to allow control loop to function intermittently.
-    """
-    def __init__(self, ip, port, signature_string, handler):
-        self.dispatcher = pythonosc.dispatcher.Dispatcher()
-        self.parser = argparse.ArgumentParser()
-        self.parser.add_argument("--ip", default=ip, help="The IP address to listen on")
-        self.parser.add_argument("--port", type=int, default=port, help="The port to listen on")
-        self.args = self.parser.parse_args()
-        self.ip = ip
-        self.port = port
-        self.server = None
-        self.transport = None
-        self.protocol = None
-        self.password = signature_string
-        self.handler = handler
-        self.log_osc = False
-
-    async def make_endpoint(self):
-        """Need to make this endpoint"""
-        assert type(self.ip) == str
-        self.server = pythonosc.osc_server.AsyncIOOSCUDPServer((self.ip, self.port),
-                                                               self.dispatcher, asyncio.get_running_loop())
-        self.transport, self.protocol = await self.server.create_serve_endpoint()
-        print("Serving on {}".format(self.ip))
-        return
-
-    async def map(self, pattern, func, *args, **kwargs):
-        """
-        pattern: string var defining the OSC pattern to be recognized
-        func: the function to map to
-        args: any args for the function, this may need to be *args and **kwargs - needs more research
-        """
-        print("... performing mapping operation... ")
-        def wrapper(address, *osc_args):
-            if self.log_osc:
-                print(f"[OSC RECEIVED] {address} {osc_args}")
-
-            return func(address, *osc_args)
-        self.dispatcher.map(pattern, wrapper)
-
-    """
-    Testing
-    """
-
-    async def enable_osc_logging(self, enabled: bool = True):
-        self.log_osc = enabled
-
 
 """
 Robot Controller
@@ -300,13 +242,22 @@ class ExoController(klampt.control.OmniRobotInterface):
         """
         return self.bones
 
-    def set_pressures(self, *args):  # Constructed to work with an arbitrary number of values
+    def set_pressures_old(self, *args):  # Constructed to work with an arbitrary number of values
         """
         *args: Length-n list of arguments each containing a float corresponding to some pressure.
         """
         args = list(args[2:-1])  # Removing unnecessary elements, we are getting four values now
         self.pressures = [pressure for pressure in args]
         return
+
+    def set_pressures(self, address, *osc_args):
+        """
+        address: OSC address string (e.g. '/pressures')
+        osc_args: pressure values
+        """
+        print("[SET_PRESSURES]", address, osc_args)
+        self.pressures = list(osc_args)
+
 
     async def pressures_to_forces(self, muscle_objects, pressures, force_multiplier):
         """

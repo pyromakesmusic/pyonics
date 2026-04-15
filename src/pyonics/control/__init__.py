@@ -1,1 +1,2 @@
-from .control import Muscle, ExoController, AsyncServer
+from .controller import Muscle, ExoController
+from .messages import AsyncServer, AsyncTestClient

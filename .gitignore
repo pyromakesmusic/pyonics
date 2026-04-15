@@ -3,8 +3,10 @@
 /src/pyonics/submodules/ui/vosk-model-small-en-us-0.15/
 /src/pyonics/submodules/ui/vosk-model-small-en-us-0.15-OLD/
 /dist/
+/.venv/
 /testenv/
 __pycache__/
+/.pytest_cache/
 *.pyc
 *.pyo
 *.pyd
