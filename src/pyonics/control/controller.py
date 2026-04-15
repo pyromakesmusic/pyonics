@@ -118,7 +118,6 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         world_a, world_b = self.geometryCalc()
         self.geometry.setSegment(world_a, world_b)
 
-        # 3. compute length + direction
         direction = kmv.sub(world_a, world_b)
         length = kmv.norm(direction)
 
@@ -137,6 +136,9 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
 
         force_vec = kmv.mul(unit, force_mag)
 
+        # 1. get link bodies
+        body_a = self.sim.body(self.controller.robot.link(self.a))
+        body_b = self.sim.body(self.controller.robot.link(self.b))
         # 5. apply equal and opposite forces
         body_a.applyForceAtWorldPoint(kmv.mul(force_vec, -1), world_a)
         body_b.applyForceAtWorldPoint(force_vec, world_b)
