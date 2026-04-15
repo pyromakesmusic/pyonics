@@ -236,8 +236,6 @@ class ExoController(klampt.control.OmniRobotInterface):
         self.muscles = self.muscleLoader(config_data)
         # Setting initial muscle pressure to zero
         self.pressures = [0 for x in range(len(self.muscles))]
-        self.cspace = None
-        self.planner = None
 
     def muscleLoader(self, config_df):
         """
@@ -271,13 +269,6 @@ class ExoController(klampt.control.OmniRobotInterface):
     Kinematics and Control
     """
 
-    def sensedPosition(self):
-        """
-        Could still include link transforms, but should also include GPS location in lat/long, maybe USNG,
-        distance from origin, pitch roll yaw, GPS, etc
-        """
-        return self.bones
-
     def set_pressures(self, address, *osc_args):
         """
         address: OSC address string (e.g. '/pressures')
@@ -285,12 +276,6 @@ class ExoController(klampt.control.OmniRobotInterface):
         """
         print("[SET_PRESSURES]", address, osc_args)
         self.pressures = list(osc_args)
-
-    def controlRate(self):
-        """
-        Should be the same as the physical device, Reaktor control rate, simulation timestep
-        """
-        return self.dt
 
     async def setup_osc_server(self):
         # Does the mapping and last minute settings stuff necessary to begin controller idle
@@ -308,29 +293,6 @@ class ExoController(klampt.control.OmniRobotInterface):
 
     async def shutdown(self):
         self.shutdown_flag = True
-
-    """
-    OPTIMIZATION
-    """
-
-    async def collision_check(self):
-        """
-        Low level collision checker for the robot given its loaded world.
-        """
-        result = kmc.world_contact_map(self.world, padding=0.1, kFriction=0.97)
-        # print(x.n for x in result)
-        return result
-
-    async def make_cspace_and_planner(self):
-        self.cspace = kmrp.make_space(self.world, self.robot, edgeCheckResolution=0.5)
-        self.planner = kmcs.MotionPlan(self.cspace, type="prm")
-        self.planner.setOptions()
-
-    async def explore(self):
-        self.robot.randomizeConfig()  # Random configuration, use the robotmodel methods to take advantage of them
-
-    async def close_planner(self):
-        self.planner.close()
 
     """
     DIAGNOSTIC
