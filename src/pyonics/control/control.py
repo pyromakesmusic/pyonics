@@ -313,6 +313,7 @@ class ExoController(klampt.control.OmniRobotInterface):
         address: OSC address string (e.g. '/pressures')
         osc_args: pressure values
         """
+        print("[SET_PRESSURES]", address, osc_args)
         self.pressures = list(osc_args)
 
 
