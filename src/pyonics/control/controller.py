@@ -20,6 +20,7 @@ OUTSIDE LIBRARY IMPORTS
 import klampt
 import klampt.sim
 import klampt.math.vectorops as kmv
+import klampt.math.so3 as so3
 import klampt.model.contact as kmc
 import klampt.plan.robotplanning as kmrp
 import klampt.plan.cspace as kmcs
@@ -37,7 +38,7 @@ CLASS DEFINITIONS
 """
 Hardware
 """
-class Muscle(klampt.sim.ActuatorEmulator):
+class MuscleEmulator(klampt.sim.ActuatorEmulator):
     """
     row: A single dataframe row with muscle information.
     controller: A robot controller.
@@ -54,8 +55,6 @@ class Muscle(klampt.sim.ActuatorEmulator):
         self.a = int(row["link_a"])  # Gets index of the row of link a
         self.b = int(row["link_b"])
 
-        self.link_a = self.controller.bones[self.a]  # Refers to the **controller's** knowledge of the link *transform*
-        self.link_b = self.controller.bones[self.b]  # Might need to be updated
         """
         The below values describe the displacement of the muscle attachment from the origin of the robot link.
         """
@@ -63,8 +62,6 @@ class Muscle(klampt.sim.ActuatorEmulator):
         self.delta_b = [float(s) for s in row["transform_b"].split(",")]
 
         # This starts out fine, but may eventually need to be updated each time step according to link position
-        self.transform_a = kmv.add(self.link_a[1], self.delta_a)
-        self.transform_b = kmv.add(self.link_b[1], self.delta_b)
 
         # Now we add some attributes that the simulated and real robot will share
         self.geometry = klampt.GeometricPrimitive()
@@ -79,6 +76,7 @@ class Muscle(klampt.sim.ActuatorEmulator):
         self.length = self.l_0  # For calculation convenience. self.length should change eache time step
         self.displacement = 0  # This is a calculated value; should initialize at 0
         self.pressure = 0  # Should be pressure relative to external, so initialize at 0 - need units eventually
+        self._k = (self.weave_length ** 2) / (4 * math.pi * self.turns ** 2) # Constant expression for calculations
 
     def collides(self):
         """
@@ -97,7 +95,48 @@ class Muscle(klampt.sim.ActuatorEmulator):
         Same as above, returns a numeric value that is the collision distance.
         """
         return 0.8
-    def update_muscle(self, pressure):  # Should call every loop?
+
+    def process(self, commands, dt):
+        if commands and 'pressure' in commands:
+            self.pressure = commands['pressure']
+
+    def substep(self, dt):
+        # 1. get link bodies
+        body_a = self.sim.body(self.controller.robot.link(self.a))
+        body_b = self.sim.body(self.controller.robot.link(self.b))
+
+        # 2. compute world attachment points (WITH ROTATION)
+        R_a, t_a = body_a.getTransform()
+        R_b, t_b = body_b.getTransform()
+
+        world_a = kmv.add(so3.apply(R_a, self.delta_a), t_a)
+        world_b = kmv.add(so3.apply(R_b, self.delta_b), t_b)
+        self.geometry.setSegment(world_a, world_b)
+
+        # 3. compute length + direction
+        direction = kmv.sub(world_a, world_b)
+        length = kmv.norm(direction)
+
+        if length < 1e-6:
+            return
+
+        unit = kmv.div(direction, length)
+        displacement = length - self.l_0
+
+        self.length = length
+        self.displacement = displacement
+
+        # 4. compute force magnitude
+        force_mag = (self.pressure * self._k) * \
+                    (((self.weave_length) / math.sqrt(3) + displacement) ** 2 - 1)
+
+        force_vec = kmv.mul(unit, force_mag)
+
+        # 5. apply equal and opposite forces
+        body_a.applyForceAtWorldPoint(kmv.mul(force_vec, -1), world_a)
+        body_b.applyForceAtWorldPoint(force_vec, world_b)
+
+    def update_muscle_old(self, pressure):  # Should call every loop?
         """
         pressure: single float value. Starting at 0-1 but may make sense to put in terms of psi, bar or pascal.
         ================
@@ -114,12 +153,12 @@ class Muscle(klampt.sim.ActuatorEmulator):
         n: number of turns in the muscle fiber
         x: the displacement. This will probably take the most work to calculate.
         """
-        # Muscle transforms must update based on new link positions //// maybe not with applyForceAtLocalPoint()
-        self.link_a = self.controller.bones[self.a]
-        self.link_b = self.controller.bones[self.b]
-
-        self.transform_a = kmv.add(self.link_a[1], self.delta_a)  # Adds link transform to muscle delta
-        self.transform_b = kmv.add(self.link_b[1], self.delta_b)
+        # # MuscleEmulator transforms must update based on new link positions //// maybe not with applyForceAtLocalPoint()
+        # self.link_a = self.controller.bones[self.a]
+        # self.link_b = self.controller.bones[self.b]
+        #
+        # self.transform_a = kmv.add(self.link_a[1], self.delta_a)  # Adds link transform to muscle delta
+        # self.transform_b = kmv.add(self.link_b[1], self.delta_b)
 
         self.geometry.setSegment(self.transform_a, self.transform_b)  # Should be updating the transform
 
@@ -127,7 +166,7 @@ class Muscle(klampt.sim.ActuatorEmulator):
         self.length = kmv.distance(self.transform_a, self.transform_b)
         self.displacement = self.length - self.l_0  # Calculates displacement based on new length
 
-        # Muscle formula
+        # MuscleEmulator formula
         force = ((self.pressure * (self.weave_length)**2)/(4 * math.pi * (self.turns)**2)) * \
                 (((self.weave_length)/math.sqrt(3) + self.displacement)**2 - 1)
 
@@ -140,8 +179,8 @@ class Muscle(klampt.sim.ActuatorEmulator):
         unit_b = kmv.div(direction_b, self.length)  # Changed to division
 
         # Combining unit vectors and force magnitude to give a force vector
-        force_a = kmv.mul(kmv.mul(unit_a, force), .5)  # Half (.5) because of Newton's Third Law,
-        force_b = kmv.mul(kmv.mul(unit_b, force), .5)
+        force_a = kmv.mul(unit_a, force)  # Half (.5) because of Newton's Third Law,
+        force_b = kmv.mul(unit_b, force)
 
         triplet_a = [self.b, force_a, self.transform_b]  # Should be integer, 3-tuple, transform
         triplet_b = [self.a, force_b, self.transform_a]  # Link to apply to, force vector to apply, transform at which to apply
@@ -179,8 +218,6 @@ class ExoController(klampt.control.OmniRobotInterface):
         """
         # print(config_data)
         self.config = config_data
-        self.state = "On"
-        self.shutdown_flag = False
         self.server = None
         self.collider = None
 
@@ -191,19 +228,15 @@ class ExoController(klampt.control.OmniRobotInterface):
             self.interface = klampt.control.OmniRobotInterface.__init__(self, self.robot)
 
         self.dt = config_data["timestep"]  # Sets the core robot clock
-        # Creating a series of link transforms, I need to check if this gets updated automatically
-        self.bones = pd.Series([self.robot.link(x).getTransform() for x in range(self.robot.numLinks())])
         # Loading all the muscles
         self.muscles = self.muscleLoader(config_data)
         # Setting initial muscle pressure to zero
         self.pressures = [0 for x in range(len(self.muscles))]
-        self.cspace = None
-        self.planner = None
 
     def muscleLoader(self, config_df):
         """
         Given a dataframe with an ["attachments"] column containing a path
-        to a .csv file detailing structured muscle parameters, generates a list of Muscle objects and
+        to a .csv file detailing structured muscle parameters, generates a list of MuscleEmulator objects and
         assigns them to the robot model. This should generate all muscles.
         """
         with open(config_df["attachments"]) as attachments:
@@ -214,7 +247,7 @@ class ExoController(klampt.control.OmniRobotInterface):
 
             for x in range(rows):
                 row = muscleinfo_df.iloc[x] # Locates the muscle information in the dataframe
-                muscle = Muscle(row, self) # Calls the muscle class constructor
+                muscle = MuscleEmulator(row, self) # Calls the muscle class constructor, has robot controller as argument
                 muscle_objects.append(muscle) # Adds the muscle to the list
 
             muscle_series = pd.Series(data=muscle_objects, name="muscle_objects")
@@ -232,23 +265,6 @@ class ExoController(klampt.control.OmniRobotInterface):
     Kinematics and Control
     """
 
-    def process(self, commands=None, dt=1):
-        return self.set_pressures(commands)
-    def sensedPosition(self):
-        """
-        Could still include link transforms, but should also include GPS location in lat/long, maybe USNG,
-        distance from origin, pitch roll yaw, GPS, etc
-        """
-        return self.bones
-
-    def set_pressures_old(self, *args):  # Constructed to work with an arbitrary number of values
-        """
-        *args: Length-n list of arguments each containing a float corresponding to some pressure.
-        """
-        args = list(args[2:-1])  # Removing unnecessary elements, we are getting four values now
-        self.pressures = [pressure for pressure in args]
-        return
-
     def set_pressures(self, address, *osc_args):
         """
         address: OSC address string (e.g. '/pressures')
@@ -257,81 +273,12 @@ class ExoController(klampt.control.OmniRobotInterface):
         print("[SET_PRESSURES]", address, osc_args)
         self.pressures = list(osc_args)
 
-
-    async def pressures_to_forces(self, muscle_objects, pressures, force_multiplier):
-        """
-        Converts actuator pressures into force application tuples.
-
-        Returns:
-        List of tuples: (link_index, force_vector, local_point)
-
-        muscle_objects: An iterable of pyonics Muscle objects.
-        pressures: An iterable of pressures.
-        force_multiplier: A numeric constant by which to multiply forces. For testing and calibration.
-        """
-        # Should move this to pyonics
-        force_list = []  # Makes a new empty list... of tuples? Needs link number, force, and transform
-        i = 0
-        try:
-            for muscle in muscle_objects:
-                triplet_a, triplet_b = muscle.update_muscle(pressures[i])  # Updates muscles w/ OSC argument
-                force_list.append(triplet_a)
-                force_list.append(triplet_b)
-                i += 1
-        except IndexError:  # Better handling would be good, currently is fine if number of pressures < muscles
-            force_list.append([0, 0, 0])
-            force_list.append([0, 0, 0])
-
-        return force_list * force_multiplier
-
-    def controlRate(self):
-        """
-        Should be the same as the physical device, Reaktor control rate, simulation timestep
-        """
-        return self.dt
-
     async def setup_osc_server(self):
         # Does the mapping and last minute settings stuff necessary to begin controller idle
         # Changed name from idle_configuration
         self.server = AsyncServer(self.config["address"], self.config["port"], "/pressures", self.set_pressures)
         await self.server.map("/pressures", self.set_pressures)
         await self.server.make_endpoint()
-
-    async def idle(self, bones_transforms):
-        """
-        bones_transforms: A list of link locations. Essentially this is just updating the sensedPosition
-        """
-        self.bones = bones_transforms  # Not working quite right, might need rotation
-        if self.state == "debug":
-            print(self.count_muscles())
-            print(self.count_bones())
-        return
-
-    async def shutdown(self):
-        self.shutdown_flag = True
-
-    """
-    OPTIMIZATION
-    """
-
-    async def collision_check(self):
-        """
-        Low level collision checker for the robot given its loaded world.
-        """
-        result = kmc.world_contact_map(self.world, padding=0.1, kFriction=0.97)
-        # print(x.n for x in result)
-        return result
-
-    async def make_cspace_and_planner(self):
-        self.cspace = kmrp.make_space(self.world, self.robot, edgeCheckResolution=0.5)
-        self.planner = kmcs.MotionPlan(self.cspace, type="prm")
-        self.planner.setOptions()
-
-    async def explore(self):
-        self.robot.randomizeConfig()  # Random configuration, use the robotmodel methods to take advantage of them
-
-    async def close_planner(self):
-        self.planner.close()
 
     """
     DIAGNOSTIC
@@ -340,9 +287,3 @@ class ExoController(klampt.control.OmniRobotInterface):
     async def enable_osc_logging(self, enabled: bool = True):
         if self.server:
             self.server.enable_osc_logging(enabled)
-
-    async def count_muscles(self):
-        return self.muscles.shape[0]
-
-    async def count_bones(self):
-        return len(self.bones)

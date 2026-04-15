@@ -1,7 +1,7 @@
-from .control import Muscle, ExoController, AsyncServer, AsyncTestClient
+from .control import MuscleEmulator, ExoController, AsyncServer, AsyncTestClient
 
 __all__ = [
-    "Muscle",
+    "MuscleEmulator",
     "ExoController",
     "AsyncServer",
     "AsyncTestClient"
