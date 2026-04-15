@@ -228,38 +228,8 @@ class ExoController(klampt.control.OmniRobotInterface):
             self.interface = klampt.control.OmniRobotInterface.__init__(self, self.robot)
 
         self.dt = config_data["timestep"]  # Sets the core robot clock
-        # Loading all the muscles
-        self.muscles = self.muscleLoader(config_data)
         # Setting initial muscle pressure to zero
         self.pressures = [0 for x in range(len(self.muscles))]
-
-    def muscleLoader(self, config_df):
-        """
-        Given a dataframe with an ["attachments"] column containing a path
-        to a .csv file detailing structured muscle parameters, generates a list of MuscleEmulator objects and
-        assigns them to the robot model. This should generate all muscles.
-        """
-        with open(config_df["attachments"]) as attachments:
-            muscleinfo_df = pd.read_csv(attachments, sep=";")  # This dataframe contains info on every muscle attachment
-            rows = muscleinfo_df.shape[0]  # This is the number of rows, so the while loop should loop "row" many times
-
-            muscle_objects = []  # Placeholder list, made to be empty and populated with all muscle objects.
-
-            for x in range(rows):
-                row = muscleinfo_df.iloc[x] # Locates the muscle information in the dataframe
-                muscle = MuscleEmulator(row, self) # Calls the muscle class constructor, has robot controller as argument
-                muscle_objects.append(muscle) # Adds the muscle to the list
-
-            muscle_series = pd.Series(data=muscle_objects, name="muscle_objects")
-            pressure_series = pd.Series(data=0, name="pressure")
-            muscleinfo_df = pd.concat([muscleinfo_df, muscle_series, pressure_series], axis=1)
-
-            """
-            This dataframe should end with all the info in the muscle attachments CSV, plus corresponding muscle objects
-            in each row.
-            # """
-            # print(str(muscleinfo_df) + " muscleinfo df") # Doing test prints
-            return muscleinfo_df
 
     """
     Kinematics and Control
