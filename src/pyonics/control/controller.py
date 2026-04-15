@@ -65,7 +65,8 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
 
         # Now we add some attributes that the simulated and real robot will share
         self.geometry = klampt.GeometricPrimitive()
-        self.geometry.setSegment(self.transform_a, self.transform_b)
+        world_a, world_b = self.geometryCalc()
+        self.geometry.setSegment(world_a, world_b)
 
 
         self.turns = row["turns"]  # Number of turns in the muscle fiber
@@ -96,11 +97,7 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         """
         return 0.8
 
-    def process(self, commands, dt):
-        if commands and 'pressure' in commands:
-            self.pressure = commands['pressure']
-
-    def substep(self, dt):
+    def geometryCalc(self):
         # 1. get link bodies
         body_a = self.sim.body(self.controller.robot.link(self.a))
         body_b = self.sim.body(self.controller.robot.link(self.b))
@@ -112,6 +109,13 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         world_a = kmv.add(so3.apply(R_a, self.delta_a), t_a)
         world_b = kmv.add(so3.apply(R_b, self.delta_b), t_b)
         self.geometry.setSegment(world_a, world_b)
+    def process(self, commands, dt):
+        if commands and 'pressure' in commands:
+            self.pressure = commands['pressure']
+
+    def substep(self, dt):
+        world_a, world_b = self.geometryCalc()
+        self.geometry.setSegment(self.geometry.setSegment(world_a, world_b))
 
         # 3. compute length + direction
         direction = kmv.sub(world_a, world_b)
