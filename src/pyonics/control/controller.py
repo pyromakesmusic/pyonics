@@ -243,6 +243,9 @@ class ExoController(klampt.control.OmniRobotInterface):
         print("[SET_PRESSURES]", address, osc_args)
         self.pressures = list(osc_args)
 
+    def controlRate(self):
+        return self.dt
+
     async def setup_osc_server(self):
         # Does the mapping and last minute settings stuff necessary to begin controller idle
         # Changed name from idle_configuration
