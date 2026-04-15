@@ -38,7 +38,7 @@ async def osc_roundtrip_test():
 
 @pytest.mark.skip(reason="Async OSC tests not stable in CI yet")
 async def test_single():
-    client = pyonics.AsyncTestClient(port=9000)
+    client = AsyncTestClient(port=9000)
     await client.send_once(1.0, 2.0, 3.0)
 
 @pytest.mark.skip(reason="Async OSC tests not stable in CI yet")
