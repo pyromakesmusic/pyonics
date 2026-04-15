@@ -76,6 +76,7 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         self.length = self.l_0  # For calculation convenience. self.length should change eache time step
         self.displacement = 0  # This is a calculated value; should initialize at 0
         self.pressure = 0  # Should be pressure relative to external, so initialize at 0 - need units eventually
+        self._k = (self.weave_length ** 2) / (4 * math.pi * self.turns ** 2) # Constant expression for calculations
 
     def collides(self):
         """
@@ -126,7 +127,7 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         self.displacement = displacement
 
         # 4. compute force magnitude
-        force_mag = ((self.pressure * (self.weave_length) ** 2) / (4 * math.pi * (self.turns) ** 2)) * \
+        force_mag = (self.pressure * self._k) * \
                     (((self.weave_length) / math.sqrt(3) + displacement) ** 2 - 1)
 
         force_vec = kmv.mul(unit, force_mag)
