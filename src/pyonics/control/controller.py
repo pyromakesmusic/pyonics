@@ -271,22 +271,12 @@ class ExoController(klampt.control.OmniRobotInterface):
     Kinematics and Control
     """
 
-    def process(self, commands=None, dt=1):
-        return self.set_pressures(commands)
     def sensedPosition(self):
         """
         Could still include link transforms, but should also include GPS location in lat/long, maybe USNG,
         distance from origin, pitch roll yaw, GPS, etc
         """
         return self.bones
-
-    def set_pressures_old(self, *args):  # Constructed to work with an arbitrary number of values
-        """
-        *args: Length-n list of arguments each containing a float corresponding to some pressure.
-        """
-        args = list(args[2:-1])  # Removing unnecessary elements, we are getting four values now
-        self.pressures = [pressure for pressure in args]
-        return
 
     def set_pressures(self, address, *osc_args):
         """
@@ -295,33 +285,6 @@ class ExoController(klampt.control.OmniRobotInterface):
         """
         print("[SET_PRESSURES]", address, osc_args)
         self.pressures = list(osc_args)
-
-
-    async def pressures_to_forces(self, muscle_objects, pressures, force_multiplier):
-        """
-        Converts actuator pressures into force application tuples.
-
-        Returns:
-        List of tuples: (link_index, force_vector, local_point)
-
-        muscle_objects: An iterable of pyonics MuscleEmulator objects.
-        pressures: An iterable of pressures.
-        force_multiplier: A numeric constant by which to multiply forces. For testing and calibration.
-        """
-        # Should move this to pyonics
-        force_list = []  # Makes a new empty list... of tuples? Needs link number, force, and transform
-        i = 0
-        try:
-            for muscle in muscle_objects:
-                triplet_a, triplet_b = muscle.update_muscle(pressures[i])  # Updates muscles w/ OSC argument
-                force_list.append(triplet_a)
-                force_list.append(triplet_b)
-                i += 1
-        except IndexError:  # Better handling would be good, currently is fine if number of pressures < muscles
-            force_list.append([0, 0, 0])
-            force_list.append([0, 0, 0])
-
-        return force_list * force_multiplier
 
     def controlRate(self):
         """
@@ -341,9 +304,6 @@ class ExoController(klampt.control.OmniRobotInterface):
         bones_transforms: A list of link locations. Essentially this is just updating the sensedPosition
         """
         self.bones = bones_transforms  # Not working quite right, might need rotation
-        if self.state == "debug":
-            print(self.count_muscles())
-            print(self.count_bones())
         return
 
     async def shutdown(self):
@@ -379,9 +339,3 @@ class ExoController(klampt.control.OmniRobotInterface):
     async def enable_osc_logging(self, enabled: bool = True):
         if self.server:
             self.server.enable_osc_logging(enabled)
-
-    async def count_muscles(self):
-        return self.muscles.shape[0]
-
-    async def count_bones(self):
-        return len(self.bones)
