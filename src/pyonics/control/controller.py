@@ -122,6 +122,9 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         unit = kmv.div(direction, length)
         displacement = length - self.l_0
 
+        self.length = length
+        self.displacement = displacement
+
         # 4. compute force magnitude
         force_mag = ((self.pressure * (self.weave_length) ** 2) / (4 * math.pi * (self.turns) ** 2)) * \
                     (((self.weave_length) / math.sqrt(3) + displacement) ** 2 - 1)
@@ -149,12 +152,12 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         n: number of turns in the muscle fiber
         x: the displacement. This will probably take the most work to calculate.
         """
-        # MuscleEmulator transforms must update based on new link positions //// maybe not with applyForceAtLocalPoint()
-        self.link_a = self.controller.bones[self.a]
-        self.link_b = self.controller.bones[self.b]
-
-        self.transform_a = kmv.add(self.link_a[1], self.delta_a)  # Adds link transform to muscle delta
-        self.transform_b = kmv.add(self.link_b[1], self.delta_b)
+        # # MuscleEmulator transforms must update based on new link positions //// maybe not with applyForceAtLocalPoint()
+        # self.link_a = self.controller.bones[self.a]
+        # self.link_b = self.controller.bones[self.b]
+        #
+        # self.transform_a = kmv.add(self.link_a[1], self.delta_a)  # Adds link transform to muscle delta
+        # self.transform_b = kmv.add(self.link_b[1], self.delta_b)
 
         self.geometry.setSegment(self.transform_a, self.transform_b)  # Should be updating the transform
 
