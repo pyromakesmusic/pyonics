@@ -66,7 +66,8 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
 
         # Now we add some attributes that the simulated and real robot will share
         self.geometry = klampt.GeometricPrimitive()
-        self.geometry.setSegment(self.geometryCalc())
+        world_a, world_b = self.geometryCalc()
+        self.geometry.setSegment(world_a, world_b)
 
 
         self.turns = row["turns"]  # Number of turns in the muscle fiber
