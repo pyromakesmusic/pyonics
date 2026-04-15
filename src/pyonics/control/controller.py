@@ -229,7 +229,7 @@ class ExoController(klampt.control.OmniRobotInterface):
 
         self.dt = config_data["timestep"]  # Sets the core robot clock
         # Setting initial muscle pressure to zero
-        self.pressures = [0 for x in range(len(self.muscles))]
+        self.pressures = None
 
     """
     Kinematics and Control
