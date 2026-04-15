@@ -62,7 +62,7 @@ class AsyncServer:
         self.log_osc = enabled
 
 class AsyncTestClient:
-    def __init__(self, ip="127.0.0.1", port=9000, address="/pressures"):
+    def __init__(self, ip="127.0.0.1", port=5005, address="/pressures"):
         self.ip = ip
         self.port = port
         self.address = address
