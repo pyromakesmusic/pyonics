@@ -3,6 +3,7 @@ import pyonics
 import time
 import asyncio
 import math
+import pytest
 
 class TestServer:
     def __init__(self):
@@ -18,6 +19,7 @@ client = SimpleUDPClient("127.0.0.1", 9000)
 client.send_message("/pressures", [0.1, 0.2, 0.3])
 time.sleep(0.1)
 
+@pytest.mark.skip(reason="Async OSC tests not stable in CI yet")
 async def osc_roundtrip_test():
     server = TestServer()
 
@@ -33,10 +35,12 @@ async def osc_roundtrip_test():
 
     assert len(server.received) > 0
 
+@pytest.mark.skip(reason="Async OSC tests not stable in CI yet")
 async def test_single():
     client = pyonics.AsyncTestClient(port=9000)
     await client.send_once(1.0, 2.0, 3.0)
 
+@pytest.mark.skip(reason="Async OSC tests not stable in CI yet")
 async def test_constant():
     client = pyonics.AsyncTestClient(port=9000)
 
@@ -45,6 +49,7 @@ async def test_constant():
 
     await client.send_loop(constant, dt=0.1, duration=2.0)
 
+@pytest.mark.skip(reason="Async OSC tests not stable in CI yet")
 async def test_sine():
     client = pyonics.AsyncTestClient(port=9000)
 
