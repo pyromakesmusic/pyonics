@@ -300,13 +300,21 @@ class ExoController(klampt.control.OmniRobotInterface):
         """
         return self.bones
 
-    def set_pressures(self, *args):  # Constructed to work with an arbitrary number of values
+    def set_pressures_old(self, *args):  # Constructed to work with an arbitrary number of values
         """
         *args: Length-n list of arguments each containing a float corresponding to some pressure.
         """
         args = list(args[2:-1])  # Removing unnecessary elements, we are getting four values now
         self.pressures = [pressure for pressure in args]
         return
+
+    def set_pressures(self, address, *osc_args):
+        """
+        address: OSC address string (e.g. '/pressures')
+        osc_args: pressure values
+        """
+        self.pressures = list(osc_args)
+
 
     async def pressures_to_forces(self, muscle_objects, pressures, force_multiplier):
         """
