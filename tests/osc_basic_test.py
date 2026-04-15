@@ -63,4 +63,3 @@ async def test_sine():
     await client.send_loop(sine_wave, dt=0.02, duration=5.0)
 
 asyncio.run(osc_roundtrip_test())
-asyncio.run(test_single())
