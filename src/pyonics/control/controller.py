@@ -143,60 +143,6 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         body_a.applyForceAtWorldPoint(kmv.mul(force_vec, -1), world_a)
         body_b.applyForceAtWorldPoint(force_vec, world_b)
 
-    def update_muscle_old(self, pressure):  # Should call every loop?
-        """
-        pressure: single float value. Starting at 0-1 but may make sense to put in terms of psi, bar or pascal.
-        ================
-        UPDATE 10.2.2023: A muscle is a spring with variable stiffness.
-
-        Should apply two forces at points determined by self.transform_a and self.transform_b, moderated by the
-        McKibben muscle formula.
-
-        We want to calculate
-        F: the force applied by the muscle.
-        To do this we will need:
-        p: relative pressure of the air chamber
-        b: the muscle fiber weave length
-        n: number of turns in the muscle fiber
-        x: the displacement. This will probably take the most work to calculate.
-        """
-        # # MuscleEmulator transforms must update based on new link positions //// maybe not with applyForceAtLocalPoint()
-        # self.link_a = self.controller.bones[self.a]
-        # self.link_b = self.controller.bones[self.b]
-        #
-        # self.transform_a = kmv.add(self.link_a[1], self.delta_a)  # Adds link transform to muscle delta
-        # self.transform_b = kmv.add(self.link_b[1], self.delta_b)
-
-        self.geometry.setSegment(self.transform_a, self.transform_b)  # Should be updating the transform
-
-        self.pressure = pressure  # Updates muscle pressure
-        self.length = kmv.distance(self.transform_a, self.transform_b)
-        self.displacement = self.length - self.l_0  # Calculates displacement based on new length
-
-        # MuscleEmulator formula
-        force = ((self.pressure * (self.weave_length)**2)/(4 * math.pi * (self.turns)**2)) * \
-                (((self.weave_length)/math.sqrt(3) + self.displacement)**2 - 1)
-
-        # Calculating a 3-tuple that gives a direction
-        direction_a = kmv.sub(self.transform_a, self.transform_b)
-        direction_b = kmv.mul(direction_a, -1) # Should just be the reverse of direction_a
-
-        # Calculating unit vectors by dividing 3-tuple by its length
-        unit_a = kmv.div(direction_a, self.length)
-        unit_b = kmv.div(direction_b, self.length)  # Changed to division
-
-        # Combining unit vectors and force magnitude to give a force vector
-        force_a = kmv.mul(unit_a, force)  # Half (.5) because of Newton's Third Law,
-        force_b = kmv.mul(unit_b, force)
-
-        triplet_a = [self.b, force_a, self.transform_b]  # Should be integer, 3-tuple, transform
-        triplet_b = [self.a, force_b, self.transform_a]  # Link to apply to, force vector to apply, transform at which to apply
-        """
-        These triplets are what is required to simulate the effect of the muscle contraction. Also, at some point I want
-        to change the muscle color based on the pressure input.
-        """
-        return triplet_a, triplet_b
-
     def pressure_autoscale(self):
         if self.pressure > self.max_pressure:  # autoscaling algorithm
             self.max_pressure = self.pressure
