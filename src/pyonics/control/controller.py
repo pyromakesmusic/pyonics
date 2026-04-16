@@ -140,8 +140,8 @@ class MuscleEmulator(klampt.sim.ActuatorEmulator):
         body_a = self.sim.body(self.controller.robot.link(self.a))
         body_b = self.sim.body(self.controller.robot.link(self.b))
         # 5. apply equal and opposite forces
-        body_a.applyForceAtWorldPoint(kmv.mul(force_vec, -1), world_a)
-        body_b.applyForceAtWorldPoint(force_vec, world_b)
+        body_a.applyForceAtPoint(kmv.mul(force_vec, -1), world_a)
+        body_b.applyForceAtPoint(force_vec, world_b)
 
     def update_muscle_old(self, pressure):  # Should call every loop?
         """
