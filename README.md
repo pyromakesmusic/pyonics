@@ -1,5 +1,5 @@
 # pyonics
-A Python library for simulating and controlling pneumatic artificial muscles in Klamp't.
+A Python library for simulating and controlling pneumatic artificial muscles using Klamp't robotics library.
 
 ## Quick Start
 
@@ -9,7 +9,7 @@ Install:
 pip install pyonics
 ```
 
-Create an ExoController:
+Create a controller:
 ```python
 import klampt
 from pyonics import ExoController, MuscleEmulator
@@ -21,6 +21,8 @@ config = {
     "core": "data/robot.rob",
     "attachments": "data/muscles.csv",
     "timestep": 0.01,
+    "address": "127.0.0.1",
+    "port": 5005
 }
 
 pcm = ExoController(config)
@@ -39,26 +41,59 @@ from klampt.sim.simulation import SimpleSimulator
 
 sim = SimpleSimulator(pcm.world)
 
-muscleinfo_df = pd.read_csv(config['attachments'], sep=";")  # This dataframe contains info on every muscle attachment
-muscleinfo_df.shape[0]  # This is the number of rows, so the loop should loop "row" many times
+muscleinfo_df = pd.read_csv(config['attachments'], sep=";")
 
-for x in range(muscleinfo_df.shape[0]):
-    row = muscleinfo_df.iloc[x] # Locates the muscle information in the dataframe
+for _, row in muscleinfo_df.iterrows():
+    row = muscleinfo_df.iloc[x] 
     muscle = MuscleEmulator(row, pcm, sim)
     sim.addEmulator(pcm.robot, muscle)
 ```
 
 Start simulation:
-```
-async def startup(self):
-    await self.pcm.setup_osc_server()
-    await self.pcm.server.enable_osc_logging()
+```python
+import asyncio
+
+async def startup():
+    await pcm.setup_osc_server()
+    await pcm.server.enable_osc_logging()
     
     running = True
     while running:
-        await sim.simulate(config["timestep"])
+        sim.simulate(0.01)
+        await asyncio.sleep(0.01)
+        
+asyncio.run(startup())
 ```
 
+## Features
+
+- Pneumatic muscle emulation
+- Pressure-driven actuation
+- Klamp't simulator integration
+- OSC network control
+
+## Requirements
+
+- Python 3.x
+- Klamp't installed
+- python-osc
+- differint
+
+### Configuration Format
+
+`has_robworld`: Boolean. Currently must be true.
+
+`world_path`: Filepath to the world, in XML format.
+
+`core`: Filepath to the robot, in .rob format.
+
+`attachments`: Filepath to the muscle attachment CSV.
+
+`timestep`: Control rate for the robot.
+
+`address`: IP address. Currently only tested locally.
+
+`port`: Networking port to receive on.
 
 ### Muscle Attachment DataFrame Format
 `name`: A name for the muscle.
