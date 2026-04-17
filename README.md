@@ -1,9 +1,5 @@
 # pyonics
-A Python software library made to simplify the design, testing and production workflow of bionic products. Relies
-heavily on the Klamp't library developed starting at Duke. First few versions are going to be designed around
-modeling McKibben muscles, and biomechanics like those encountered in humanoid robots.
-
-Thanks to Dr. Paul Savala, my research advisor, for support in developing this library.
+A Python library for simulating and controlling pneumatic artificial muscles in Klamp't.
 
 ## Quick Start
 
@@ -37,30 +33,6 @@ name;link_a;link_b;transform_a;transform_b;label_a;label_b;turns;r_0;l_0;weave_l
 right_inferior_latissimus;9;4;0,0,0;0,-1,0;superior;inferior;20;1;2;2;80000
 ```
 
-`name`: A name for the muscle.
-
-`link_a`: The index of the first robot link to attach to.
-
-`link_b`: The index of the second robot link to attach to.
-
-`transform_a`: The local transform on link A to attach to.
-
-`transform_b`: The local transform on link B to attach to.
-
-`label_a`: For convenience. Functionality not yet implemented.
-
-`label_b`: For convenience. Functionality not yet implemented.
-
-`turns`: Number of turns in the weave.
-
-`r_0`: Resting radius of the muscle.
-
-`l_0`: Resting length of the muscle.
-
-`weave_length`: Length of the weave surrounding the muscle.
-
-`pressure`: Pressure of the muscle. Updated with muscle commands.
-
 ```python
 import pandas as pd
 from klampt.sim.simulation import SimpleSimulator
@@ -86,3 +58,32 @@ async def startup(self):
     while running:
         await sim.simulate(config["timestep"])
 ```
+
+
+### Muscle Attachment DataFrame Format
+`name`: A name for the muscle.
+
+`link_a`: The index of the first robot link to attach to.
+
+`link_b`: The index of the second robot link to attach to.
+
+`transform_a`: The local transform on link A to attach to.
+
+`transform_b`: The local transform on link B to attach to.
+
+`label_a`: For convenience. Functionality not yet implemented.
+
+`label_b`: For convenience. Functionality not yet implemented.
+
+`turns`: Number of turns in the weave.
+
+`r_0`: Resting radius of the muscle.
+
+`l_0`: Resting length of the muscle.
+
+`weave_length`: Length of the weave surrounding the muscle.
+
+`pressure`: Pressure of the muscle. Updated with muscle commands.
+
+### Acknowledgments
+Thanks to Dr. Paul Savala, my research advisor, for support in developing this library.
